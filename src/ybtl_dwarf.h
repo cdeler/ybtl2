@@ -101,9 +101,6 @@ public:
     fd_opened_internally_ = true;
   }
 
-  explicit ExecutableDwarfData(const std::string_view &sw)
-      : ExecutableDwarfData{sw.data()} {}
-
   explicit ExecutableDwarfData(const std::string &s)
       : ExecutableDwarfData{s.data()} {}
 
