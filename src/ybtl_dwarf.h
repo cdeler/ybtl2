@@ -7,15 +7,12 @@
 #ifndef YBTL_YBTL_DWARF_H
 #define YBTL_YBTL_DWARF_H
 
-#include <string_view>
 #include <string>
 #include <mutex>
 #include <vector>
 
 #include <elfutils/libdw.h>
 #include <elfutils/libdwfl.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -24,7 +21,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <dwarf.h>
-#include <libgen.h>
 
 namespace cdeler::ybtl2 {
 /*
@@ -42,16 +38,19 @@ namespace cdeler::ybtl2 {
  */
 static const constexpr size_t STACK_WALKER_IDENTEFER_NAME_MAX_LENGTH = 64;
 
-static constexpr const size_t DWARF_SOURCE_FILE_NAME_MAX_LENGTH = 64;
 struct function_data_t {
-  char function_name[STACK_WALKER_IDENTEFER_NAME_MAX_LENGTH];
-  char source_file_name[DWARF_SOURCE_FILE_NAME_MAX_LENGTH];
-  ssize_t source_line;
+  std::string function_name;
+  std::string source_file_name;
+  size_t source_line;
 
   explicit function_data_t(Dwarf_Die *function_die);
 
 private :
   void _load_function_name(Dwarf_Die *function_die);
+  void _load_declaration_source_line(Dwarf_Die *function_die);
+  void _load_source_file_name(Dwarf_Die *function_die);
+
+  static const char *get_filename_by_cu_id(Dwarf_Die *function_die, size_t file_idx);
 };
 
 struct ElfHandle final {
@@ -91,7 +90,11 @@ struct DwarfHandle final {
 class ExecutableDwarfData {
 public:
   explicit ExecutableDwarfData(int fd_) noexcept
-      : fd_{fd_}, fd_opened_internally_{false}, elf_{fd_}, dwarf_{elf_}, is_dwarf_data_loaded_{false} {}
+      : fd_{fd_},
+        fd_opened_internally_{false},
+        elf_{fd_},
+        dwarf_{elf_},
+        is_dwarf_data_loaded_{false} {}
 
   explicit ExecutableDwarfData(const char *executable_path)
       : ExecutableDwarfData{open(executable_path, O_RDONLY)} {

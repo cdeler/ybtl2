@@ -4,6 +4,7 @@
 
 #include <string>
 #include <iostream>
+#include <array>
 #include <gtest/gtest.h>
 
 #include "ybtl_dwarf.h"
@@ -14,16 +15,14 @@ using namespace cdeler::ybtl2;
 class TestUbtlDwarf : public testing::Test {
 public:
   TestUbtlDwarf() {
-    char path[PATH_MAX];
+    array<char, PATH_MAX> path{};
     const char *this_exe = "/proc/self/exe";
-    memset(path, 0, sizeof(path)); // readlink doesn't make null term string
 
-    readlink(this_exe, path, PATH_MAX);
-    executable_path = path;
+    readlink(this_exe, path.data(), PATH_MAX);
+    executable_path = path.data();
   }
 
 protected:
-
   string executable_path;
 };
 
@@ -32,7 +31,8 @@ TEST_F(TestUbtlDwarf, it_works) {
   ASSERT_TRUE(data.is_initialized());
 }
 
-extern void __attribute__((noinline)) test_function() {
+static constexpr const size_t PREV_LINE = __LINE__;
+extern void __attribute__((noinline, used)) b0e7d6d2_1535_4fe9_9a1c_60f538b7e564() {
   asm volatile ("nop");
 }
 
@@ -44,17 +44,24 @@ TEST_F(TestUbtlDwarf, get_function_list) {
 
   auto functions = data.get_function_data();
 
-  bool is_test_function_found = false;
-  string looking_for = "test_function";
+  optional<function_data_t> a_function{nullopt};
+
+  string looking_for = "b0e7d6d2_1535_4fe9_9a1c_60f538b7e564";
 
   for (auto &func: functions) {
     if (looking_for == func.function_name) {
-      is_test_function_found = true;
+      a_function = make_optional(func);
       break;
     }
   }
+  char this_file[] = __FILE__;
 
-  ASSERT_TRUE(is_test_function_found);
+  ASSERT_TRUE(a_function.has_value());
+
+  auto function = a_function.value();
+
+  ASSERT_EQ(function.source_line, PREV_LINE + 1);
+  ASSERT_STREQ(function.source_file_name.c_str(), basename(this_file));
 }
 
 int main(int argc, char *argv[]) {

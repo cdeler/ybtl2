@@ -2,6 +2,7 @@
 // Created by sergei_krotov on 7/4/19.
 //
 #include <vector>
+#include <libgen.h>
 
 #include "ybtl_dwarf.h"
 
@@ -17,19 +18,20 @@ ExecutableDwarfData::~ExecutableDwarfData() noexcept {
     close(fd_);
   }
 }
+
 bool ExecutableDwarfData::load_dwarf_data() {
   if (!is_dwarf_data_loaded_) {
     lock_guard<mutex> lock{data_load_mutex_};
 
     if (!is_dwarf_data_loaded_) {
-
       _read_dwarf_data();
-      is_dwarf_data_loaded_ = true;
+      is_dwarf_data_loaded_ = !functions_.empty();
       return is_dwarf_data_loaded();
     }
   }
   return false;
 }
+
 void ExecutableDwarfData::_read_dwarf_data() {
   Dwarf_Off offset = 0U, last_offset = 0U;
   size_t header_size = 0U;
@@ -59,8 +61,10 @@ void ExecutableDwarfData::_read_dwarf_data() {
 }
 
 function_data_t::function_data_t(Dwarf_Die *function_die)
-    : function_name{""}, source_file_name{""}, source_line{-1} {
+    : function_name{}, source_file_name{}, source_line{0} {
   _load_function_name(function_die);
+  _load_source_file_name(function_die);
+  _load_declaration_source_line(function_die);
 }
 
 void function_data_t::_load_function_name(Dwarf_Die *function_die) {
@@ -70,5 +74,39 @@ void function_data_t::_load_function_name(Dwarf_Die *function_die) {
   dwarf_attr_integrate(function_die, DW_AT_name, &da);
   const char *fname = dwarf_formstring(&da);
   if (fname)
-    strncpy(function_name, fname, sizeof(function_name));
+    function_name = fname;
+}
+
+void function_data_t::_load_declaration_source_line(Dwarf_Die *function_die) {
+  Dwarf_Attribute da;
+  memset(&da, 0, sizeof(Dwarf_Attribute));
+
+  dwarf_attr_integrate(function_die, DW_AT_decl_line, &da);
+  dwarf_formudata(&da, &source_line);
+}
+
+void function_data_t::_load_source_file_name(Dwarf_Die *function_die) {
+  Dwarf_Attribute da;
+  size_t file_idx;
+
+  memset(&da, 0, sizeof(Dwarf_Attribute));
+
+  dwarf_attr_integrate(function_die, DW_AT_decl_file, &da);
+  dwarf_formudata(&da, &file_idx);
+
+  char *file_name = const_cast<char *>( get_filename_by_cu_id(function_die, file_idx));
+
+  if (file_name)
+    source_file_name = basename(file_name);
+}
+
+const char *function_data_t::get_filename_by_cu_id(Dwarf_Die *function_die, size_t file_idx) {
+  Dwarf_Die cu_die;
+  Dwarf_Files *files;
+
+  if (!dwarf_diecu(function_die, &cu_die, nullptr, nullptr) ||
+      dwarf_getsrcfiles(&cu_die, &files, nullptr) != 0)
+    return nullptr;
+
+  return dwarf_filesrc(files, file_idx, nullptr, nullptr);
 }
