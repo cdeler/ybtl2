@@ -1,3 +1,5 @@
+#include <utility>
+
 //
 // Created by sergei_krotov on 7/9/19.
 //
@@ -12,8 +14,8 @@
 
 namespace cdeler::ybtl2 {
 struct stack_chunk_t {
-  stack_chunk_t(void *addr, const std::string &val) noexcept
-      : ip{addr}, name_buffer{val} {};
+  stack_chunk_t(void *addr, std::string val) noexcept
+      : ip{addr}, name_buffer{std::move(val)} {};
   stack_chunk_t(stack_chunk_t &&st) noexcept
       : ip{st.ip}, name_buffer{std::move(st.name_buffer)} {};
 

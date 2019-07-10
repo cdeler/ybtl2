@@ -39,6 +39,40 @@ TEST_F(YbtlStackWalker, test_nomangled_function) {
   nomangled_function();
 }
 
+extern "C"
+{
+// the function returns ptr to be compatible with C
+StackWalker *__attribute__((noinline)) recursive_call(int depth) {
+  if (depth > 1) {
+    return recursive_call(depth - 1);
+  }
+
+  return new StackWalker(StackWalker::unwind());
+}
+}
+
+TEST_F(YbtlStackWalker, test_recursion) {
+  int depth = 100;
+  auto recursive_stack = recursive_call(depth);
+  auto current_stack = StackWalker::unwind();
+
+  ASSERT_EQ(current_stack.get_stack().size() + depth,
+            recursive_stack->get_stack().size());
+
+  auto &stack_data = recursive_stack->get_stack();
+
+  auto actual_recursion_depth = count_if(
+      stack_data.begin(),
+      stack_data.end(),
+      [](const stack_chunk_t &val) {
+        return val.name_buffer == "recursive_call";
+      });
+
+  ASSERT_EQ(depth, actual_recursion_depth);
+
+  delete recursive_stack;
+}
+
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);
 

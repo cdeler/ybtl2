@@ -14,7 +14,7 @@ using namespace cdeler::ybtl2;
 StackWalker StackWalker::unwind() {
   vector<stack_chunk_t> stack;
 
-  _Unwind_Reason_Code code = _Unwind_Backtrace(_trace_frame, &stack);
+  _Unwind_Backtrace(_trace_frame, &stack);
 
   return StackWalker{stack};
 }
@@ -22,7 +22,7 @@ _Unwind_Reason_Code StackWalker::_trace_frame(struct _Unwind_Context *context, v
   auto storage = reinterpret_cast<vector<stack_chunk_t> *>(data);
   _Unwind_Reason_Code rc = _URC_NO_REASON;
 
-  void *addr = (void *) _Unwind_GetIP(context);
+  auto addr = reinterpret_cast<void *>(_Unwind_GetIP(context));
 
   auto[function_base, function_name] = _get_symbol(addr);
 
