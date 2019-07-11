@@ -42,35 +42,38 @@ TEST_F(YbtlStackWalker, test_nomangled_function) {
 extern "C"
 {
 // the function returns ptr to be compatible with C
-StackWalker *__attribute__((noinline)) recursive_call(int depth) {
+tuple<StackWalker, string> *recursive_function(volatile int depth) {
   if (depth > 1) {
-    return recursive_call(depth - 1);
+    asm volatile ("nop");
+    return recursive_function(depth - 1);
   }
 
-  return new StackWalker(StackWalker::unwind());
+  return new tuple<StackWalker, string>(StackWalker::unwind(), __func__);
 }
 }
 
 TEST_F(YbtlStackWalker, test_recursion) {
   int depth = 100;
-  auto recursive_stack = recursive_call(depth);
+
+  unique_ptr<tuple<StackWalker, string>> recursive_stack{recursive_function(depth)};
+
+  auto[stack_walker, function_name] = *recursive_stack;
+
+  auto &recursive_stack_data = stack_walker.get_stack();
+
   auto current_stack = StackWalker::unwind();
 
   ASSERT_EQ(current_stack.get_stack().size() + depth,
-            recursive_stack->get_stack().size());
-
-  auto &stack_data = recursive_stack->get_stack();
+            recursive_stack_data.size());
 
   auto actual_recursion_depth = count_if(
-      stack_data.begin(),
-      stack_data.end(),
-      [](const stack_chunk_t &val) {
-        return val.name_buffer == "recursive_call";
+      recursive_stack_data.begin(),
+      recursive_stack_data.end(),
+      [&, fn = function_name](const stack_chunk_t &val) {
+        return val.name_buffer == fn;
       });
 
   ASSERT_EQ(depth, actual_recursion_depth);
-
-  delete recursive_stack;
 }
 
 int main(int argc, char *argv[]) {

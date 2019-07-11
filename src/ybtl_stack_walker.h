@@ -18,6 +18,7 @@ struct stack_chunk_t {
       : ip{addr}, name_buffer{std::move(val)} {};
   stack_chunk_t(stack_chunk_t &&st) noexcept
       : ip{st.ip}, name_buffer{std::move(st.name_buffer)} {};
+  stack_chunk_t(const stack_chunk_t &) = default;
 
   void *ip;
   std::string name_buffer;
@@ -25,8 +26,10 @@ struct stack_chunk_t {
 
 class StackWalker {
 public:
-  StackWalker(StackWalker &&st) noexcept
-      : m_stack{std::move(st.m_stack)} {};
+  StackWalker(StackWalker &&sw) noexcept
+      : m_stack{std::move(sw.m_stack)} {};
+
+  StackWalker(const StackWalker &sw) = default;
 
   const std::vector<stack_chunk_t> &get_stack() const noexcept {
     return m_stack;
