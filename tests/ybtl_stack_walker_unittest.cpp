@@ -6,6 +6,7 @@
 #include <iostream>
 #include <array>
 #include <gtest/gtest.h>
+#include <functional>
 
 #include "ybtl_stack_walker.h"
 
@@ -69,8 +70,8 @@ TEST_F(YbtlStackWalker, test_recursion) {
   auto actual_recursion_depth = count_if(
       recursive_stack_data.begin(),
       recursive_stack_data.end(),
-      [&, fn = function_name](const stack_chunk_t &val) {
-        return val.name_buffer == fn;
+      [&, name = std::ref(function_name)](const stack_chunk_t &val) {
+        return val.name_buffer == name.get();
       });
 
   ASSERT_EQ(depth, actual_recursion_depth);
