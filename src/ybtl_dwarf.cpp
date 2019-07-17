@@ -51,7 +51,7 @@ void ExecutableDwarfData::_read_dwarf_data() {
       case DW_TAG_entry_point:
       case DW_TAG_inlined_subroutine:
       case DW_TAG_subprogram:
-        functions_.emplace_back(function_data_t{&child_die});
+        functions_.emplace(function_data_t{&child_die});
         break;
       default:
         break;
@@ -109,4 +109,10 @@ const char *function_data_t::get_filename_by_cu_id(Dwarf_Die *function_die, size
     return nullptr;
 
   return dwarf_filesrc(files, file_idx, nullptr, nullptr);
+}
+
+bool function_data_t::operator==(const function_data_t &other) const {
+  return (source_line == other.source_line)
+      && (function_name == other.function_name)
+      && (source_file_name == other.source_file_name);
 }

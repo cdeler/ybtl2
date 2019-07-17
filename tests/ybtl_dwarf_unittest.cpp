@@ -36,19 +36,17 @@ extern void __attribute__((noinline, used)) b0e7d6d2_1535_4fe9_9a1c_60f538b7e564
   asm volatile ("nop");
 }
 
-TEST_F(TestUbtlDwarf, get_function_list) {
+TEST_F(TestUbtlDwarf, test_find_function_in_dwarf_data) {
   ExecutableDwarfData data{executable_path};
   data.load_dwarf_data();
 
   ASSERT_TRUE(data.is_dwarf_data_loaded());
 
-  auto functions = data.get_function_data();
-
   optional<function_data_t> a_function{nullopt};
 
   string looking_for = "b0e7d6d2_1535_4fe9_9a1c_60f538b7e564";
 
-  for (auto &func: functions) {
+  for (auto &func: data) {
     if (looking_for == func.function_name) {
       a_function = make_optional(func);
       break;

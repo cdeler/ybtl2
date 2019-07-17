@@ -10,6 +10,7 @@
 #include <string>
 #include <mutex>
 #include <vector>
+#include <unordered_set>
 
 #include <elfutils/libdw.h>
 #include <elfutils/libdwfl.h>
@@ -45,12 +46,32 @@ struct function_data_t {
 
   explicit function_data_t(Dwarf_Die *function_die);
 
+  bool operator==(const function_data_t &other) const;
 private :
   void _load_function_name(Dwarf_Die *function_die);
   void _load_declaration_source_line(Dwarf_Die *function_die);
   void _load_source_file_name(Dwarf_Die *function_die);
 
   static const char *get_filename_by_cu_id(Dwarf_Die *function_die, size_t file_idx);
+};
+
+inline void hash_combine(std::size_t &) {}
+
+template<typename T, typename... Rest>
+inline void hash_combine(std::size_t &seed, const T &v, Rest... rest) {
+  std::hash<T> hasher;
+  seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  hash_combine(seed, rest...);
+}
+
+struct function_data_t_hasher {
+  std::size_t operator()(const function_data_t &fd) const {
+    std::size_t result = 0;
+
+    hash_combine(result, fd.function_name, fd.source_file_name, fd.source_line);
+
+    return result;
+  }
 };
 
 struct ElfHandle final {
@@ -88,6 +109,7 @@ struct DwarfHandle final {
 };
 
 class ExecutableDwarfData {
+  using functions_container_t = std::unordered_set<function_data_t, function_data_t_hasher>;
 public:
   explicit ExecutableDwarfData(int fd_) noexcept
       : fd_{fd_},
@@ -116,8 +138,20 @@ public:
     return is_dwarf_data_loaded_;
   }
 
-  const std::vector<function_data_t> &get_function_data() const noexcept {
-    return functions_;
+  functions_container_t::iterator begin() {
+    return functions_.begin();
+  }
+
+  functions_container_t::iterator end() {
+    return functions_.end();
+  }
+
+  functions_container_t::const_iterator cbegin() const {
+    return functions_.cbegin();
+  }
+
+  functions_container_t::const_iterator cend() const {
+    return functions_.cend();
   }
 private:
   void _read_dwarf_data();
@@ -130,8 +164,9 @@ private:
 
   volatile bool is_dwarf_data_loaded_;
   std::mutex data_load_mutex_;
-  std::vector<function_data_t> functions_;
+  functions_container_t functions_{};
 };
 
 }
+
 #endif //YBTL_YBTL_DWARF_H
