@@ -22,6 +22,14 @@ TEST_F(YbtlStackWalker, it_works) {
   ASSERT_TRUE(!stack.get_stack().empty());
 }
 
+TEST_F(YbtlStackWalker, test_deepest_symbol_is__start) {
+  StackWalker stack = StackWalker::unwind();
+
+  auto last_symbol = stack.get_stack().crbegin();
+
+  ASSERT_STREQ("_start", last_symbol->name_buffer.c_str());
+}
+
 extern "C"
 {
 void nomangled_function() {
@@ -36,7 +44,7 @@ void nomangled_function() {
 }
 }
 
-TEST_F(YbtlStackWalker, test_nomangled_function) {
+TEST_F(YbtlStackWalker, test_called_function_exists_in_unwind_data) {
   nomangled_function();
 }
 
@@ -53,7 +61,7 @@ tuple<StackWalker, string> *recursive_function(volatile int depth) {
 }
 }
 
-TEST_F(YbtlStackWalker, test_recursion) {
+TEST_F(YbtlStackWalker, test_recursive_function_count_in_unwind_data) {
   int depth = 100;
 
   unique_ptr<tuple<StackWalker, string>> recursive_stack{recursive_function(depth)};
@@ -70,7 +78,7 @@ TEST_F(YbtlStackWalker, test_recursion) {
   auto actual_recursion_depth = count_if(
       recursive_stack_data.begin(),
       recursive_stack_data.end(),
-      [&, name = std::ref(function_name)](const stack_chunk_t &val) {
+      [name = std::ref(function_name)](const stack_chunk_t &val) {
         return val.name_buffer == name.get();
       });
 
