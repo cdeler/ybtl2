@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include "ybtl_dwarf.h"
+#include "ybtl_types.h"
 
 using namespace std;
 using namespace cdeler::ybtl2;
