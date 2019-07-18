@@ -51,7 +51,6 @@ _Unwind_Reason_Code StackWalker::_trace_frame(struct _Unwind_Context *context, v
       } else {
         unwind_storage.emplace_back(function_name, "", 0);
       }
-
     }
   }
 

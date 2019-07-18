@@ -85,6 +85,30 @@ TEST_F(YbtlStackWalker, test_recursive_function_count_in_unwind_data) {
   ASSERT_EQ(depth, actual_recursion_depth);
 }
 
+extern "C" {
+void *test_function() {
+  asm volatile ("nop");
+  char file_name[] = __FILE__;
+  return new tuple<StackWalker, string, int>(StackWalker::unwind(),
+                                             string{basename(file_name)},
+                                             __LINE__ - 5);
+}
+}
+
+TEST_F(YbtlStackWalker, test_for_line_no_and_source_file) {
+  auto call_result_ptr = reinterpret_cast<tuple<StackWalker, string, int> *>(test_function());
+  unique_ptr<tuple<StackWalker, string, int>> call_result(call_result_ptr);
+
+  auto &[unwind_data, file_name, line_no] = *call_result;
+
+  auto function_handle_in_stack = unwind_data.cbegin();
+
+  ASSERT_NE(function_handle_in_stack, unwind_data.cend());
+
+  ASSERT_STREQ(function_handle_in_stack->source_file_name.c_str(), file_name.c_str());
+  ASSERT_EQ(function_handle_in_stack->source_line, line_no);
+}
+
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);
 
