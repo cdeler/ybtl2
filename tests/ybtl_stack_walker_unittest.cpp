@@ -19,13 +19,13 @@ class YbtlStackWalker : public testing::Test {
 TEST_F(YbtlStackWalker, it_works) {
   StackWalker stack = StackWalker::unwind();
 
-  ASSERT_TRUE(!stack.get_stack().empty());
+  ASSERT_TRUE(!stack.empty());
 }
 
 TEST_F(YbtlStackWalker, test_deepest_symbol_is__start) {
   StackWalker stack = StackWalker::unwind();
 
-  auto last_symbol = stack.get_stack().crbegin();
+  auto last_symbol = stack.crbegin();
 
   ASSERT_STREQ("_start", last_symbol->name_buffer.c_str());
 }
@@ -35,9 +35,9 @@ extern "C"
 void nomangled_function() {
   StackWalker stack = StackWalker::unwind();
 
-  auto last_frame = stack.get_stack().begin();
+  auto last_frame = stack.cbegin();
 
-  ASSERT_TRUE(last_frame != stack.get_stack().end());
+  ASSERT_TRUE(last_frame != stack.cend());
 
   ASSERT_STREQ(__func__, last_frame->name_buffer.c_str());
   ASSERT_EQ(reinterpret_cast<void *>(nomangled_function), last_frame->ip);
@@ -68,16 +68,14 @@ TEST_F(YbtlStackWalker, test_recursive_function_count_in_unwind_data) {
 
   auto[stack_walker, function_name] = *recursive_stack;
 
-  auto &recursive_stack_data = stack_walker.get_stack();
-
   auto current_stack = StackWalker::unwind();
 
-  ASSERT_EQ(current_stack.get_stack().size() + depth,
-            recursive_stack_data.size());
+  ASSERT_EQ(current_stack.size() + depth,
+            stack_walker.size());
 
   auto actual_recursion_depth = count_if(
-      recursive_stack_data.begin(),
-      recursive_stack_data.end(),
+      stack_walker.cbegin(),
+      stack_walker.cend(),
       [name = std::ref(function_name)](const stack_chunk_t &val) {
         return val.name_buffer == name.get();
       });

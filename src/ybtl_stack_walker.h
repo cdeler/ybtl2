@@ -24,26 +24,26 @@ struct stack_chunk_t {
   std::string name_buffer;
 };
 
-class StackWalker {
-public:
-  StackWalker(StackWalker &&sw) noexcept
-      : m_stack{std::move(sw.m_stack)} {};
-
-  StackWalker(const StackWalker &sw) = default;
-
-  const std::vector<stack_chunk_t> &get_stack() const noexcept {
-    return m_stack;
-  }
-
-  static StackWalker unwind();
+class StackWalker : private std::vector<stack_chunk_t> {
 private:
-  explicit StackWalker(std::vector<stack_chunk_t> &st) noexcept
-      : m_stack{std::move(st)} {}
+  using function_stack_t = std::vector<stack_chunk_t>;
+
+  explicit StackWalker(function_stack_t &st) noexcept
+      : function_stack_t{std::move(st)} {}
 
   static _Unwind_Reason_Code _trace_frame(struct _Unwind_Context *context, void *data);
   static std::tuple<void *, std::string> _get_symbol(const void *addr);
 
-  std::vector<stack_chunk_t> m_stack;
+public:
+  using function_stack_t::cbegin;
+  using function_stack_t::cend;
+  using function_stack_t::crbegin;
+  using function_stack_t::crend;
+
+  using function_stack_t::size;
+  using function_stack_t::empty;
+
+  static StackWalker unwind();
 };
 }
 
