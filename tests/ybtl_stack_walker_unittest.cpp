@@ -27,7 +27,8 @@ TEST_F(YbtlStackWalker, test_deepest_symbol_is__start) {
 
   auto last_symbol = stack.crbegin();
 
-  ASSERT_STREQ("_start", last_symbol->name_buffer.c_str());
+  ASSERT_NE(last_symbol, stack.crend());
+  ASSERT_STREQ("_start", last_symbol->function_name.c_str());
 }
 
 extern "C"
@@ -39,8 +40,9 @@ void nomangled_function() {
 
   ASSERT_TRUE(last_frame != stack.cend());
 
-  ASSERT_STREQ(__func__, last_frame->name_buffer.c_str());
-  ASSERT_EQ(reinterpret_cast<void *>(nomangled_function), last_frame->ip);
+  ASSERT_STREQ(__func__, last_frame->function_name.c_str());
+  // TODO It might be interespin information and should be stored
+  // ASSERT_EQ(reinterpret_cast<void *>(nomangled_function), last_frame->ip);
 }
 }
 
@@ -76,8 +78,8 @@ TEST_F(YbtlStackWalker, test_recursive_function_count_in_unwind_data) {
   auto actual_recursion_depth = count_if(
       stack_walker.cbegin(),
       stack_walker.cend(),
-      [name = std::ref(function_name)](const stack_chunk_t &val) {
-        return val.name_buffer == name.get();
+      [name = std::ref(function_name)](const function_data_t &val) {
+        return val.function_name == name.get();
       });
 
   ASSERT_EQ(depth, actual_recursion_depth);

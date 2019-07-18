@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 #include <unwind.h>
+#include <functional>
+
+#include "ybtl_types.h"
+#include "ybtl_dwarf.h"
 
 namespace cdeler::ybtl2 {
 struct stack_chunk_t {
@@ -24,9 +28,11 @@ struct stack_chunk_t {
   std::string name_buffer;
 };
 
-class StackWalker : private std::vector<stack_chunk_t> {
+class StackWalker : private std::vector<function_data_t> {
 private:
-  using function_stack_t = std::vector<stack_chunk_t>;
+  using function_stack_t = std::vector<function_data_t>;
+  using unwind_arg_data_t = std::tuple<function_stack_t &,
+                                       ExecutableDwarfData &>;
 
   explicit StackWalker(function_stack_t &st) noexcept
       : function_stack_t{std::move(st)} {}

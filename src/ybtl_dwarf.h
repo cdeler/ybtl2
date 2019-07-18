@@ -10,7 +10,8 @@
 #include <string>
 #include <mutex>
 #include <vector>
-#include <unordered_set>
+#include <unordered_map>
+#include <iostream>
 
 #include <elfutils/libdw.h>
 #include <elfutils/libdwfl.h>
@@ -61,7 +62,7 @@ struct DwarfHandle final {
 };
 
 class ExecutableDwarfData {
-  using functions_container_t = std::unordered_set<function_data_t, function_data_t_hasher>;
+  using functions_container_t = std::unordered_map<std::string, function_data_t>;
 public:
   explicit ExecutableDwarfData(int fd_) noexcept
       : fd_{fd_},
@@ -78,6 +79,9 @@ public:
   explicit ExecutableDwarfData(const std::string &s)
       : ExecutableDwarfData{s.data()} {}
 
+  explicit ExecutableDwarfData()
+      : ExecutableDwarfData{"/proc/self/exe"} {}
+
   ExecutableDwarfData(const ExecutableDwarfData &) = delete;
 
   virtual ~ExecutableDwarfData() noexcept;
@@ -90,12 +94,8 @@ public:
     return is_dwarf_data_loaded_;
   }
 
-  functions_container_t::iterator begin() {
-    return functions_.begin();
-  }
-
-  functions_container_t::iterator end() {
-    return functions_.end();
+  functions_container_t::const_iterator find(const std::string &function_name) const {
+    return functions_.find(function_name);
   }
 
   functions_container_t::const_iterator cbegin() const {
@@ -104,6 +104,14 @@ public:
 
   functions_container_t::const_iterator cend() const {
     return functions_.cend();
+  }
+
+  functions_container_t::iterator begin() {
+    return functions_.begin();
+  }
+
+  functions_container_t::iterator end() {
+    return functions_.end();
   }
 private:
   void _read_dwarf_data();

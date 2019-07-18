@@ -47,9 +47,9 @@ TEST_F(TestUbtlDwarf, test_find_function_in_dwarf_data) {
 
   string looking_for = "b0e7d6d2_1535_4fe9_9a1c_60f538b7e564";
 
-  for (auto &func: data) {
-    if (looking_for == func.function_name) {
-      a_function = make_optional(func);
+  for (const auto &func: data) {
+    if (looking_for == func.second.function_name) {
+      a_function = make_optional(func.second);
       break;
     }
   }

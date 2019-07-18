@@ -51,9 +51,9 @@ void ExecutableDwarfData::_read_dwarf_data() {
       case DW_TAG_entry_point:
       case DW_TAG_inlined_subroutine:
       case DW_TAG_subprogram:
-        functions_.emplace(function_data_t{&child_die});
-        break;
-      default:
+        function_data_t new_function{&child_die};
+
+        functions_.emplace(new_function.function_name, new_function);
         break;
       }
     } while (dwarf_siblingof(&child_die, &child_die) == 0);

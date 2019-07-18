@@ -33,6 +33,13 @@ struct function_data_t {
 
   explicit function_data_t(Dwarf_Die *function_die);
 
+  explicit function_data_t(std::string function_name_,
+                           std::string source_file_name_,
+                           size_t source_line_)
+      : function_name{std::move(function_name_)},
+        source_file_name{std::move(source_file_name_)},
+        source_line{source_line_} {};
+
   bool operator==(const function_data_t &other) const;
 private :
   void _load_function_name(Dwarf_Die *function_die);
@@ -52,11 +59,9 @@ inline void hash_combine(std::size_t &seed, const T &v, Rest... rest) {
 
 struct function_data_t_hasher {
   std::size_t operator()(const function_data_t &fd) const {
-    std::size_t result = 0;
+    std::hash<std::string> hasher;
 
-    hash_combine(result, fd.function_name, fd.source_file_name, fd.source_line);
-
-    return result;
+    return hasher(fd.function_name);
   }
 };
 
