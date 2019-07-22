@@ -36,10 +36,6 @@ void function_data_t::_load_function_name(Dwarf_Die *function_die) {
   const char *fname = dwarf_formstring(&da);
   if (fname)
     function_name = fname;
-
-  if (function_name == "b0e7d6d2_1535_4fe9_9a1c_60f538b7e564") {
-    int i = 5;
-  }
 }
 
 void function_data_t::_load_declaration_source_line(Dwarf_Die *function_die) {
