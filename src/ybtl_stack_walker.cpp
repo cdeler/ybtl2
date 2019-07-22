@@ -40,16 +40,17 @@ _Unwind_Reason_Code StackWalker::_trace_frame(struct _Unwind_Context *context, v
 
     if (function_base != StackWalker::unwind) {
       if (dwarf_data.is_dwarf_data_loaded()) {
-        auto dwarf_record = dwarf_data.find(function_name);
+        auto dwarf_record = dwarf_data.find(reinterpret_cast<intptr_t>(function_base));
         if (dwarf_record != dwarf_data.cend()) {
           unwind_storage.emplace_back(function_name,
+                                      dwarf_record->second.function_address,
                                       dwarf_record->second.source_file_name,
                                       dwarf_record->second.source_line);
         } else {
-          unwind_storage.emplace_back(function_name, "", 0);
+          unwind_storage.emplace_back(function_name, 0, "", 0);
         }
       } else {
-        unwind_storage.emplace_back(function_name, "", 0);
+        unwind_storage.emplace_back(function_name, 0, "", 0);
       }
     }
   }

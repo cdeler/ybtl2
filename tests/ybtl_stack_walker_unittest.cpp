@@ -41,8 +41,6 @@ void nomangled_function() {
   ASSERT_TRUE(last_frame != stack.cend());
 
   ASSERT_STREQ(__func__, last_frame->function_name.c_str());
-  // TODO It might be interespin information and should be stored
-  // ASSERT_EQ(reinterpret_cast<void *>(nomangled_function), last_frame->ip);
 }
 }
 
@@ -107,6 +105,22 @@ TEST_F(YbtlStackWalker, test_for_line_no_and_source_file) {
 
   ASSERT_STREQ(function_handle_in_stack->source_file_name.c_str(), file_name.c_str());
   ASSERT_EQ(function_handle_in_stack->source_line, line_no);
+}
+
+StackWalker mangled_test_function() {
+  return StackWalker::unwind();
+}
+
+TEST_F(YbtlStackWalker, test_for_mangled_function) {
+  auto unwind_result = mangled_test_function();
+
+  auto last_function = unwind_result.cbegin();
+
+  ASSERT_NE(unwind_result.cend(), last_function);
+
+  auto last_function_address = reinterpret_cast<intptr_t>(&mangled_test_function);
+
+  ASSERT_EQ(last_function_address, last_function->function_address);
 }
 
 int main(int argc, char *argv[]) {
