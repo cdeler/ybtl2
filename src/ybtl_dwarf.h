@@ -62,7 +62,7 @@ struct DwarfHandle final {
 };
 
 class ExecutableDwarfData {
-  using functions_container_t = std::unordered_map<std::string, function_data_t>;
+  using functions_container_t = std::unordered_map<std::size_t, function_data_t>;
 public:
   explicit ExecutableDwarfData(int fd_) noexcept
       : fd_{fd_},
@@ -94,8 +94,8 @@ public:
     return is_dwarf_data_loaded_;
   }
 
-  functions_container_t::const_iterator find(const std::string &function_name) const {
-    return functions_.find(function_name);
+  functions_container_t::const_iterator find(const std::size_t function_start_address) const {
+    return functions_.find(function_start_address);
   }
 
   functions_container_t::const_iterator cbegin() const {
