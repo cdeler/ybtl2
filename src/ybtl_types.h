@@ -28,15 +28,18 @@ namespace cdeler::ybtl2 {
 
 struct function_data_t {
   std::string function_name;
+  size_t function_address;
   std::string source_file_name;
   size_t source_line;
 
   explicit function_data_t(Dwarf_Die *function_die);
 
   explicit function_data_t(std::string function_name_,
+                           size_t function_address_,
                            std::string source_file_name_,
                            size_t source_line_)
       : function_name{std::move(function_name_)},
+        function_address{function_address_},
         source_file_name{std::move(source_file_name_)},
         source_line{source_line_} {};
 
@@ -45,7 +48,7 @@ private :
   void _load_function_name(Dwarf_Die *function_die);
   void _load_declaration_source_line(Dwarf_Die *function_die);
   void _load_source_file_name(Dwarf_Die *function_die);
-
+  void _load_function_address(Dwarf_Die *function_die);
   static const char *get_filename_by_cu_id(Dwarf_Die *function_die, size_t file_idx);
 };
 
@@ -59,9 +62,9 @@ inline void hash_combine(std::size_t &seed, const T &v, Rest... rest) {
 
 struct function_data_t_hasher {
   std::size_t operator()(const function_data_t &fd) const {
-    std::hash<std::string> hasher;
+    std::hash<std::size_t> hasher;
 
-    return hasher(fd.function_name);
+    return hasher(fd.function_address);
   }
 };
 

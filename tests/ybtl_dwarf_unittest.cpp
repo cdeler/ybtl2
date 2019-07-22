@@ -53,14 +53,16 @@ TEST_F(TestUbtlDwarf, test_find_function_in_dwarf_data) {
       break;
     }
   }
-  char this_file[] = __FILE__;
 
   ASSERT_TRUE(a_function.has_value());
 
   auto function = a_function.value();
+  auto function_address = reinterpret_cast<intptr_t>(&b0e7d6d2_1535_4fe9_9a1c_60f538b7e564);
+  char this_file[] = __FILE__;
 
-  ASSERT_EQ(function.source_line, PREV_LINE + 1);
-  ASSERT_STREQ(function.source_file_name.c_str(), basename(this_file));
+  ASSERT_EQ(function_address, function.function_address);
+  ASSERT_EQ(PREV_LINE + 1, function.source_line);
+  ASSERT_STREQ(basename(this_file), function.source_file_name.c_str());
 }
 
 int main(int argc, char *argv[]) {
